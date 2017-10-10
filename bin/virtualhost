@@ -1,0 +1,111 @@
+#!/usr/bin/env bash
+
+# httpd.conf should have the following:
+# IncludeOptional /etc/httpd/conf.d/vhosts/*.conf
+
+readonly PORT="80"
+readonly SITES="/etc/httpd/conf.d/vhosts/"
+readonly ROOT="/var/www/vhosts/"
+readonly GROUP="httpd"
+readonly PERMISSION=755
+readonly WEBMASTER="webmaster@localhost"
+
+usage() {
+	printf "%s\n" "Usage:"
+	printf "\t%s\n\n" "sudo ./virtualhost [create|delete] [domain]"
+	exit
+}
+
+create() {
+
+	if [ -f $domainConf ] || [ -d $domainRoot ]; then
+		printf "%s\n" "The domain $domain exists!"
+		exit
+	fi
+
+	if ! mkdir $domainRoot ; then
+		printf "%s\n" "Could not create directory: $domainRoot"
+		exit
+	fi
+
+	chown -R "$user:$GROUP" $domainRoot
+	chmod -R $PERMISSION $domainRoot
+
+	if ! echo "
+		<VirtualHost *:$PORT>
+			ServerName $domain
+			ServerAlias $domain
+			ServerAdmin $WEBMASTER
+
+			DocumentRoot $domainRoot
+
+			<Directory $domainRoot>
+				Options Indexes FollowSymLinks MultiViews
+				AllowOverride all
+				Require all granted
+			</Directory>
+		</VirtualHost>" > $domainConf ; then
+			printf "%s\n" "There was an error creating $domain file"
+			exit
+		fi
+
+		if ! echo "127.0.0.1  $domain" >> /etc/hosts ; then
+			printf "%s\n" "Unable to write to /etc/hosts"
+			exit
+		fi		
+
+		sudo systemctl restart httpd
+
+		printf "%s\n" "Virtualhost created <http://$domain>"
+}
+
+delete() {
+	
+	if ! [ -f $domainConf ] || ! [ -d $domainRoot ]; then
+		printf "%s\n" "Domain <$domain> not found"
+		exit
+	fi
+
+	sed -i "/$domain/d" /etc/hosts
+	
+	rm $domainConf
+	rm -r $domainRoot
+
+	systemctl restart httpd
+
+	printf "%s\n" "Virtualhost deleted <$domain>"
+
+}
+
+# Entry point
+main() {
+
+	if [ "$(whoami)" != "root" ]; then
+		printf "%s\n" "This script must be run as root"
+		exit 
+	fi
+
+	if [ $# -ne 2 ]; then
+		usage
+	fi
+
+	local domain=$2
+	local domainRoot=$ROOT$domain
+	local domainConf=$SITES$domain.conf
+	local user=$SUDO_USER
+
+	case $1 in
+		"create") 
+			create
+			;;
+		"delete")
+			delete
+			;;
+		*)
+			usage
+		;;
+	esac
+ 
+}
+
+main $@
