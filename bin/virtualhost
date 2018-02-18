@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
-# httpd.conf should have the following:
-# IncludeOptional /etc/httpd/conf.d/vhosts/*.conf
+# /etc/httpd/conf.f/httpd.conf should have the following:
+# IncludeOptional /etc/httpd/conf.d/virtualhosts/*.conf
 
 readonly PORT="80"
-readonly SITES="/etc/httpd/conf.d/vhosts/"
-readonly ROOT="/var/www/vhosts/"
+readonly SITES="/etc/httpd/conf.d/virtualhosts/"
+readonly ROOT="/var/www/virtualhosts/"
 readonly GROUP="httpd"
 readonly PERMISSION=755
 readonly WEBMASTER="webmaster@localhost"
@@ -77,7 +77,6 @@ delete() {
 
 }
 
-# Entry point
 main() {
 
 	if [ "$(whoami)" != "root" ]; then
