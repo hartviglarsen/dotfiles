@@ -21,4 +21,4 @@ alias srestart="sudo systemctl restart httpd && sudo systemctl restart mariadb &
 # I'm lazy
 alias www="cd /var/www/"
 alias html="cd /var/www/html/"
-alias vhosts="cd /var/www/vhosts/"
+alias vhosts="cd /var/www/virtualhosts/"
